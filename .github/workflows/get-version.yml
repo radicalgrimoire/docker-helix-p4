@@ -1,0 +1,53 @@
+name: get-version
+
+on:
+  workflow_call:
+    inputs:
+      source_ref:
+        required: false
+        type: string
+        default: 'main'
+      build_path:
+        required: true
+        type: string
+    outputs:
+      version:
+        description: "Sanitized image version for tagging"
+        value: ${{ jobs.get-version.outputs.version }}
+      version_raw:
+        description: "Raw image version"
+        value: ${{ jobs.get-version.outputs.version_raw }}
+
+jobs:
+  get-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.image-version.outputs.version }}
+      version_raw: ${{ steps.image-version.outputs.raw_version }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.source_ref }}
+      - name: Load build configuration
+        id: build
+        run: |
+          set -a
+          . ./${{ inputs.build_path }}/build/.env
+          set +a
+          echo "image_name=$IMAGE_NAME" >> "$GITHUB_OUTPUT"
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: docker-image-${{ steps.build.outputs.image_name }}
+      - name: Load Docker image
+        run: |
+          set -a
+          . ./${{ inputs.build_path }}/build/.env
+          set +a
+          docker load < "$IMAGE_NAME.tar"
+          echo "Loaded Docker image: $IMAGE_NAME"
+          docker images | grep "$IMAGE_NAME"
+      - name: Get image version
+        id: image-version
+        run: |
+          bash ./${{ inputs.build_path }}/build/docker-get-version.sh ./${{ inputs.build_path }}/build >> "$GITHUB_OUTPUT"

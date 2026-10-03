@@ -1,0 +1,96 @@
+name: build-develop
+
+run-name: >
+  ${{ github.event_name == 'workflow_call' && 'Reusable Build' || 'Manual Build' }}
+  by @${{ github.actor }}
+
+permissions:
+  contents: read
+  packages: write
+
+on:
+  workflow_call:
+    inputs:
+      source_ref:
+        required: false
+        type: string
+        default: 'main'
+      build_path:
+        required: true
+        type: string
+
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: 'Branch, tag, or commit SHA to build. Defaults to main.'
+        required: false
+        type: string
+
+jobs:
+  # Display commit information
+  info:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          ref: ${{ inputs.source_ref || 'main' }}
+      - name: Display build information
+        run: |
+          echo "Build Information:"
+          echo "Event: ${{ github.event_name }}"
+          echo "Commit: $(git rev-parse HEAD)"
+          echo "Actor: ${{ github.actor }}"
+          echo "Source ref: ${{ inputs.source_ref || 'main' }}"
+          echo "Build path: ${{ inputs.build_path || 'helix-p4d' }}"
+          echo ""
+          # Get last commit author and message
+          COMMIT_AUTHOR=$(git log -1 --pretty=format:"%an" HEAD)
+          COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s" HEAD)
+          echo "Auther: ${COMMIT_AUTHOR} / ${COMMIT_MESSAGE}"
+
+  # Check if today is the designated day to push (Monday) or if manually triggered.
+  # Uses external reusable workflow for day checking logic
+  check-day:
+    needs: info
+    uses: radicalgrimoire/radicalgrimoire/.github/workflows/check-day.yml@main
+    with:
+      schedule_type: 'weekly'
+      target_value: '1'      # Monday
+      timezone: 'Asia/Tokyo'
+
+  test:
+    needs: [info, check-day]
+    uses: ./.github/workflows/test.yml
+    with:
+      should_push: ${{ needs.check-day.outputs.should-push }}
+      source_ref: ${{ inputs.source_ref || 'main' }}
+      build_path: ${{ inputs.build_path || 'helix-p4d' }}
+    secrets: inherit
+
+  # Get P4D version step
+  get-version:
+    needs: [check-day, test]
+    if: needs.check-day.outputs.should-push == 'true'
+    uses: ./.github/workflows/get-version.yml
+    with:
+      source_ref: ${{ inputs.source_ref || 'main' }}
+      build_path: ${{ inputs.build_path || 'helix-p4d' }}
+    secrets: inherit
+
+  # Push image to GitHub Packages.
+  # See also https://docs.docker.com/docker-hub/builds/
+  # TAG_SUFFIX="nightly-$(date +'%Y%m%d')"
+  push:
+    uses: ./.github/workflows/publish.yml
+    needs: [check-day, get-version]
+    if: needs.check-day.outputs.should-push == 'true'
+    permissions:
+      contents: read
+      packages: write
+    with:
+      version: ${{ needs.get-version.outputs.version }}
+      version_raw: ${{ needs.get-version.outputs.version_raw }}
+      source_ref: ${{ inputs.source_ref || 'main' }}
+      build_path: ${{ inputs.build_path || 'helix-p4d' }}
+    secrets: inherit

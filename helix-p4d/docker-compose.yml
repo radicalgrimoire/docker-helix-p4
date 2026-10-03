@@ -1,0 +1,27 @@
+version: '3'
+
+networks:
+  app_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.16.238.0/24"
+
+volumes:
+  servers:
+
+services:
+  helixcore:
+    container_name: helix-p4d
+    image: helix-p4d
+    build:
+      context: ./p4d
+      dockerfile: Dockerfile
+    init: true
+    volumes:
+      - 'servers:/opt/perforce/servers'
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.10
+    ports:
+      - "1666:1666"

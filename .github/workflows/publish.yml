@@ -1,0 +1,92 @@
+name: publish
+
+env:
+  TAG_LATEST: latest
+  TAG_NIGHTLY: nightly
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+      version_raw:
+        required: true
+        type: string
+      source_ref:
+        required: false
+        type: string
+        default: 'main'
+      build_path:
+        required: true
+        type: string
+
+
+jobs:
+  # Push image to GitHub Packages.
+  # See also https://docs.docker.com/docker-hub/builds/
+  # TAG_SUFFIX="nightly-$(date +'%Y%m%d')"
+  publish:
+    # Ensure test job passes before pushing image.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.source_ref }}
+
+      - name: Load build configuration
+        id: build
+        run: |
+          set -a
+          . ./${{ inputs.build_path }}/build/.env
+          set +a
+          echo "image_name=$IMAGE_NAME" >> "$GITHUB_OUTPUT"
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: docker-image-${{ steps.build.outputs.image_name }}
+
+      - name: Load Docker image
+        run: |
+          set -a
+          . ./${{ inputs.build_path }}/build/.env
+          set +a
+          docker load < "$IMAGE_NAME.tar"
+          echo "Loaded Docker image: $IMAGE_NAME"
+          docker images | grep "$IMAGE_NAME"
+
+      - name: Log into registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Set current datetime as env variable
+        env:
+          TZ: 'Asia/Tokyo'
+        run: echo "CURRENT_DATETIME=$(date +'%Y%m%d')" >> $GITHUB_ENV
+
+      - name: Push image
+        run: |
+          set -a
+          . ./${{ inputs.build_path }}/build/.env
+          set +a
+          IMAGE_ID=ghcr.io/${{ github.repository }}/$IMAGE_NAME
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+          VERSION="${{ inputs.version }}"
+          echo "$IMAGE_NAME version (for tag): $VERSION"
+
+          # Version and build number tag
+          docker tag "$IMAGE_NAME" $IMAGE_ID:$VERSION.$GITHUB_RUN_NUMBER
+          docker push $IMAGE_ID:$VERSION.$GITHUB_RUN_NUMBER
+
+          # Latest tag
+          docker tag "$IMAGE_NAME" $IMAGE_ID:${{ env.TAG_LATEST }}
+          docker push $IMAGE_ID:${{ env.TAG_LATEST }}
+
+          # Nightly tag (scheduled runs only)
+          if [ "${{ github.event_name }}" == "schedule" ]; then
+            docker tag "$IMAGE_NAME" $IMAGE_ID:${{ env.TAG_NIGHTLY }}
+            docker push $IMAGE_ID:${{ env.TAG_NIGHTLY }}
+          fi

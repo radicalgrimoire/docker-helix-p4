@@ -1,0 +1,54 @@
+name: test
+
+on:
+  workflow_call:
+    inputs:
+      should_push:
+        required: false
+        type: string
+        default: 'true'
+      source_ref:
+        required: false
+        type: string
+        default: 'main'
+      build_path:
+        required: true
+        type: string
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.source_ref }}
+
+      - name: Build image
+        id: build
+        run: |
+          set -a
+          . ./${{ inputs.build_path }}/build/.env
+          set +a
+          echo "image_name=$IMAGE_NAME" >> "$GITHUB_OUTPUT"
+          echo "Building Docker image with Dockerfile..."
+          bash ./${{ inputs.build_path }}/build/docker-build.sh Dockerfile ./${{ inputs.build_path }}/build
+
+      - name: Run tests
+        run: |
+          bash ./${{ inputs.build_path }}/build/docker-test.sh ./${{ inputs.build_path }}/build
+
+      - name: Save Docker image as artifact
+        if: inputs.should_push == 'true'
+        run: |
+          set -a
+          . ./${{ inputs.build_path }}/build/.env
+          set +a
+          docker save "$IMAGE_NAME" > "$IMAGE_NAME.tar"
+
+      - name: Upload Docker image artifact
+        if: inputs.should_push == 'true'
+        uses: actions/upload-artifact@v6
+        with:
+          name: docker-image-${{ steps.build.outputs.image_name }}
+          path: ${{ steps.build.outputs.image_name }}.tar
+          retention-days: 1

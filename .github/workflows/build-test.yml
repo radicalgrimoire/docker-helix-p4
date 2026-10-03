@@ -1,0 +1,31 @@
+name: build-test
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: 'Branch, tag, or commit SHA to test. Defaults to main.'
+        required: false
+        type: string
+        default: 'main'
+  push:
+    branches:
+      - main
+      - 'feature/**'
+    paths-ignore:
+      - '.github/**'
+  pull_request:
+    paths-ignore:
+      - '.github/**'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+    with:
+      should_push: 'false'
+      source_ref: ${{ inputs.source_ref || github.sha }}
+      build_path: helix-p4d
+    secrets: inherit

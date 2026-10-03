@@ -1,0 +1,20 @@
+name: scheduled-build
+
+run-name: Scheduled Build by @${{ github.actor }}
+
+on:
+  schedule:
+    # 9:00 JST = 0:00 UTC (JST = UTC + 9 hours)
+    - cron: '0 0 * * 1'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  helix-p4d:
+    uses: ./.github/workflows/build-develop.yml
+    with:
+      source_ref: main
+      build_path: helix-p4d
+    secrets: inherit
