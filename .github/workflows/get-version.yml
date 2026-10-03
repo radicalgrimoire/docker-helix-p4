@@ -32,7 +32,7 @@ jobs:
         id: build
         run: |
           set -a
-          . ./${{ inputs.build_path }}/build/.env
+          . ./build/${{ inputs.build_path }}/.env
           set +a
           echo "image_name=$IMAGE_NAME" >> "$GITHUB_OUTPUT"
       - name: Download Docker image artifact
@@ -42,7 +42,7 @@ jobs:
       - name: Load Docker image
         run: |
           set -a
-          . ./${{ inputs.build_path }}/build/.env
+          . ./build/${{ inputs.build_path }}/.env
           set +a
           docker load < "$IMAGE_NAME.tar"
           echo "Loaded Docker image: $IMAGE_NAME"
@@ -50,4 +50,4 @@ jobs:
       - name: Get image version
         id: image-version
         run: |
-          bash ./${{ inputs.build_path }}/build/docker-get-version.sh ./${{ inputs.build_path }}/build >> "$GITHUB_OUTPUT"
+          bash ./build/${{ inputs.build_path }}/docker-get-version.sh ./build/${{ inputs.build_path }} >> "$GITHUB_OUTPUT"

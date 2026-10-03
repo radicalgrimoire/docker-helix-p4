@@ -27,21 +27,21 @@ jobs:
         id: build
         run: |
           set -a
-          . ./${{ inputs.build_path }}/build/.env
+          . ./build/${{ inputs.build_path }}/.env
           set +a
           echo "image_name=$IMAGE_NAME" >> "$GITHUB_OUTPUT"
           echo "Building Docker image with Dockerfile..."
-          bash ./${{ inputs.build_path }}/build/docker-build.sh Dockerfile ./${{ inputs.build_path }}/build
+          bash ./build/${{ inputs.build_path }}/docker-build.sh Dockerfile ./build/${{ inputs.build_path }}
 
       - name: Run tests
         run: |
-          bash ./${{ inputs.build_path }}/build/docker-test.sh ./${{ inputs.build_path }}/build
+          bash ./build/${{ inputs.build_path }}/docker-test.sh ./build/${{ inputs.build_path }}
 
       - name: Save Docker image as artifact
         if: inputs.should_push == 'true'
         run: |
           set -a
-          . ./${{ inputs.build_path }}/build/.env
+          . ./build/${{ inputs.build_path }}/.env
           set +a
           docker save "$IMAGE_NAME" > "$IMAGE_NAME.tar"
 
