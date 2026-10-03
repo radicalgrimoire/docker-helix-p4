@@ -29,3 +29,11 @@ jobs:
       source_ref: ${{ inputs.source_ref || github.sha }}
       build_path: helix-p4d
     secrets: inherit
+
+  helix-proxy:
+    uses: ./.github/workflows/test.yml
+    with:
+      should_push: 'false'
+      source_ref: ${{ inputs.source_ref || github.sha }}
+      build_path: helix-proxy
+    secrets: inherit

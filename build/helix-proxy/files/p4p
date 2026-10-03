@@ -1,0 +1,11 @@
+/opt/perforce/servers/log/p4p.log {
+    ifempty
+    dateformat .%Y%m%d
+    missingok
+    compress
+    daily
+    rotate 2
+    postrotate
+        /bin/kill -HUP `cat /var/run/syslogd.pid 2> /dev/null` 2> /dev/null || true
+    endscript
+}

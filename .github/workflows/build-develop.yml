@@ -16,8 +16,9 @@ on:
         type: string
         default: 'main'
       build_path:
-        required: true
+        required: false
         type: string
+        default: 'helix-p4d'
 
   workflow_dispatch:
     inputs:
@@ -25,6 +26,14 @@ on:
         description: 'Branch, tag, or commit SHA to build. Defaults to main.'
         required: false
         type: string
+      build_path:
+        description: 'Service to build.'
+        required: false
+        type: choice
+        options:
+          - helix-p4d
+          - helix-proxy
+        default: 'helix-p4d'
 
 jobs:
   # Display commit information

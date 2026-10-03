@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  p4proxy:
+    container_name: helix-proxy
+    image: 'ghcr.io/radicalgrimoire/docker-helix-p4/helix-proxy:latest'
+    environment:
+      P4PORT: ssl:p4d:1666
+      PORT: ssl:1777
+      P4USER: super
+      P4PASSWD: Passw0rd
+      P4P_CACHE_PURGE_DAYS: ${P4P_CACHE_PURGE_DAYS:-30}
+    ports:
+      - "1777:1777"

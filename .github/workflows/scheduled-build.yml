@@ -18,3 +18,10 @@ jobs:
       source_ref: main
       build_path: helix-p4d
     secrets: inherit
+
+  helix-proxy:
+    uses: ./.github/workflows/build-develop.yml
+    with:
+      source_ref: main
+      build_path: helix-proxy
+    secrets: inherit
