@@ -4,6 +4,10 @@ services:
   p4proxy:
     container_name: helix-proxy
     image: 'ghcr.io/radicalgrimoire/docker-helix-p4/helix-proxy:latest'
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     environment:
       P4PORT: ssl:p4d:1666
       PORT: ssl:1777
