@@ -1,225 +1,109 @@
-# Docker Helix P4
+# Helix Core (P4D)
 
-This repository runs Perforce Helix Core (P4D) in a Docker container. It is primarily intended for development and validation.
+Docker で Perforce Helix Core Server (P4D) を起動するための構成です。開発・検証用途を想定しています。本番環境で利用する場合は、認証、ネットワーク制御、証明書の配布とローテーション、バックアップと復旧、監視を個別に設計してください。
 
-## Overview
+## 構成
 
-- Exposes port 1666 over SSL
-- Persists server data in the Docker volume named `servers`
-- Uses a custom network `app_net` with subnet `172.16.238.0/24`
-- Uses the case consistency trigger script `CheckCaseTrigger3.py` on change submit
-- Keeps service runtime assets and build assets separate for future multi-service support
+- SSL でポート `1666` を公開します。
+- サーバーデータは Docker の名前付きボリューム `helix-p4d_servers` に永続化されます。
+- コンテナーは `172.16.238.0/24` の専用ネットワーク上で `172.16.238.10` を使用します。
+- 変更の送信時に大文字・小文字の整合性を確認するトリガーを登録します。
 
-## Repository Structure
-
-- `helix-p4d/docker-compose.yml`: Service definition for Helix Core
-- `helix-p4d/Makefile`: Daily operation commands
-- `helix-p4d/p4d/Dockerfile`: Runtime Dockerfile based on `ghcr.io/radicalgrimoire/docker-helix-p4/helix-p4d:latest`
-- `helix-p4d/p4d/download-certs.sh`: Helper script to download certificate archives from GitHub Releases
-- `build/helix-p4d/Dockerfile`: Dockerfile for rebuilding the base image
-- `build/helix-p4d/docker-build.sh`: Build wrapper that assembles `--build-arg` values from `.env` and environment variables
-- `build/helix-p4d/files/init.sh`: First-time initialization logic
-- `build/helix-p4d/files/run.sh`: Startup logic
-
-## Prerequisites
+## 前提条件
 
 - Docker
-- Docker Compose (`docker-compose` command)
-- GNU Make (`make`)
-- `winpty` on Windows if you use `make shell`
+- Docker Compose v2 の `docker compose` コマンド
 
-## Quick Start
+## 起動
 
-Run the commands from the repository root.
-
-| Step | Command | Description |
-| --- | --- | --- |
-| 1 | `make -C helix-p4d start` | Start the Helix Core container in detached mode. |
-| 2 | `make -C helix-p4d logs` | Follow container logs to confirm startup and runtime status. |
-| 3 | `make -C helix-p4d shell` | Open an interactive shell inside the running container. |
-| 4 | `make -C helix-p4d stop` | Stop the running container without removing it. |
-| 5 | `make -C helix-p4d remove` | Remove the container and network created by `docker-compose down`. |
-
-Direct Docker Compose command:
+この `helix-p4d` ディレクトリで実行します。
 
 ```bash
-docker-compose -f helix-p4d/docker-compose.yml -p helixcore up -d
+docker compose up -d
+docker compose logs -f
 ```
 
-## Makefile Commands
+初期状態の接続先と管理ユーザー:
 
-- `make -C helix-p4d start`: Start containers
-- `make -C helix-p4d stop`: Stop containers
-- `make -C helix-p4d remove`: Run `docker-compose down`
-- `make -C helix-p4d logs`: Follow logs
-- `make -C helix-p4d shell`: Open bash in the container
-- `make -C helix-p4d build`: Build the runtime image from the Compose definition
-- `make -C helix-p4d rebuild`: Rebuild the runtime image without cache
-- `make -C helix-p4d change-password`: Change the `super` user password
+- P4PORT: `ssl:localhost:1666`
+- ユーザー: `super`
+- 初期パスワード: `Passw0rd`
 
-Example for `change-password`:
+初回接続ではサーバー証明書を信頼します。
 
 ```bash
-OLD_PASS=<current-password> NEW_PASS=<new-password> make -C helix-p4d change-password
-```
-
-After changing the password, update `P4PASSWD` in your Compose, environment, or secret settings before restart.
-
-## Network and Persistence
-
-- Container name: `helix-p4d`
-- Static IP: `172.16.238.10`
-- Published port: `1666:1666`
-- Volume: `servers:/opt/perforce/servers`
-
-Data remains available across container recreation unless you remove the volume.
-
-## Environment Variables
-
-Main variables used by this project:
-
-| Variable | Description | Example |
-| --- | --- | --- |
-| `P4NAME` | Perforce server name | `master` |
-| `P4PORT` | Server port | `ssl:1666` |
-| `P4USER` | Admin user | `super` |
-| `P4PASSWD` | Admin password | Any secure value |
-| `P4HOME` | Perforce home | `/opt/perforce/servers` |
-| `P4ROOT` | Server root | `/opt/perforce/servers/master` |
-| `CASE_INSENSITIVE` | Case mode (`0` = case-sensitive, `1` = case-insensitive) | `0` |
-| `P4CONFIG` | P4 config path | `/opt/perforce/.p4config` |
-
-Notes:
-
-- The current Compose file does not explicitly define environment values.
-- Effective values depend on the base image configuration and build arguments.
-- To pin values, add `services.helixcore.environment` in `helix-p4d/docker-compose.yml`.
-
-Example:
-
-```yaml
-services:
-  helixcore:
-    environment:
-      P4NAME: master
-      P4PORT: ssl:1666
-      P4USER: super
-      P4PASSWD: your-password
-      P4ROOT: /opt/perforce/servers/master
-      CASE_INSENSITIVE: 0
-```
-
-## Building Images
-
-For standard operation, the image referenced by `helix-p4d/p4d/Dockerfile` is sufficient. Rebuild the base image when you need to customize it.
-
-```bash
-bash build/helix-p4d/docker-build.sh Dockerfile ./build/helix-p4d
-```
-
-`build/helix-p4d/docker-build.sh` passes these values as `--build-arg`:
-
-- Variables defined in `build/helix-p4d/.env`
-- Runtime environment variables: `P4NAME`, `P4PORT`, `P4USER`, `P4PASSWD`, `P4HOME`, `P4ROOT`, and `CASE_INSENSITIVE`
-
-## Startup Behavior
-
-`build/helix-p4d/files/init.sh` performs first-time configuration:
-
-- Initializes the server with `configure-helix-p4d.sh`
-- Runs `p4 trust` and `p4 login`
-- Sets server configuration values such as `server.extensions.allow.unsigned`
-- Registers the case consistency trigger
-- Imports the admin group definition from `admin.txt`
-
-`build/helix-p4d/files/run.sh` performs startup tasks:
-
-- Starts the server with `p4dctl start -t p4d ${P4NAME}`
-- Starts cron
-- Attempts login using `P4PASSWD`
-- Rewrites `P4CONFIG` only when login succeeds
-- Tails `P4ROOT/logs/log`
-
-If `P4PASSWD` does not match the actual server password in an existing volume, startup continues but automatic login fails. The administrator user `super` is not intended to have its password changed during normal operation.
-
-## Connection Example
-
-For both P4V and CLI:
-
-- Server: `ssl:localhost:1666`
-- User: `super` or your configured user
-- Password: the value currently configured on the server
-
-CLI:
-
-```bash
+p4 -p ssl:localhost:1666 trust
 p4 -p ssl:localhost:1666 -u super login
 ```
 
-## Certificate Download Helper
+P4V ではサーバーに `ssl:localhost:1666` を指定してください。
 
-`helix-p4d/p4d/download-certs.sh` downloads and extracts certificate archives from GitHub Releases.
+## 日常操作
 
-```bash
-bash helix-p4d/p4d/download-certs.sh --help
-```
+- `docker compose up -d`: コンテナーをバックグラウンドで起動します。
+- `docker compose stop`: コンテナーを停止します。
+- `docker compose logs -f`: コンテナーログを追跡します。
+- `docker exec -it helix-p4d bash`: 実行中のコンテナーで Bash を開きます。
+- `docker compose down`: コンテナーと Compose ネットワークを削除します。データボリュームは残ります。
+- `docker compose build`: Compose 定義のランタイムイメージをビルドします。
+- `docker compose build --no-cache`: キャッシュを使わずにランタイムイメージをビルドします。
 
-Main options:
-
-- `-r`, `--repo`: Repository in `owner/repository` format
-- `-t`, `--token`: GitHub token
-- `-d`, `--dir`: Download directory
-- `-y`, `--yes`: Skip confirmation prompts
-
-## CI/CD Workflows
-
-The `.github/workflows` directory includes:
-
-- `build-test.yml`: Build and integration tests for branches
-- `build-develop.yml`: Reusable test-to-publish pipeline and manual Core build entry point
-- `scheduled-build.yml`: Scheduled build entry point; each service supplies its own build path
-- `test.yml`: Reusable test workflow
-- `get-version.yml`: Extracts `p4d -V` from the built image artifact
-- `publish.yml`: Publishes tagged images to GHCR
-
-Main publish tags:
-
-- `<version>.<run_number>`
-- `latest`
-- `nightly` (only on scheduled runs)
-
-## Troubleshooting
-
-If startup fails:
-
-- Check whether port 1666 is already in use.
-- Check errors with `make -C helix-p4d logs`.
-- Check container state with `docker ps -a`.
-
-If connection fails:
-
-- Verify the target server is `ssl:localhost:1666`.
-- First connection may require `p4 trust`.
-
-Server status check example:
+サーバー状態は、コンテナー内で確認できます。
 
 ```bash
-make -C helix-p4d shell
+docker exec -it helix-p4d bash
 p4dctl status
 ```
 
-## References
+## パスワードの変更
+
+`super` ユーザーのパスワードは、実行中のコンテナーで次の対話コマンドを実行して変更します。
+
+```bash
+docker exec -it helix-p4d \
+  sudo -H -E -u perforce env P4PORT=ssl:1666 P4USER=super p4 passwd
+```
+
+変更後は、利用しているクライアント、環境変数、シークレットに設定した `P4PASSWD` を新しい値へ更新してから再起動してください。
+
+## データの永続化
+
+`docker compose down` やコンテナーの再作成では、`helix-p4d_servers` ボリューム内のデータは削除されません。サーバーを完全に初期化する必要がある場合だけ、停止後にボリュームを削除してください。この操作は元に戻せません。
+
+```bash
+docker compose down
+docker volume rm helix-p4d_servers
+```
+
+既存ボリュームのサーバーパスワードがイメージの設定値と異なる場合でも、サーバー自体は起動します。その場合は、現在のパスワードでログインしてください。
+
+## イメージのビルド
+
+このディレクトリの `p4d/Dockerfile` は公開済みのベースイメージに証明書ダウンロード用コマンドを追加するランタイムイメージです。P4D ベースイメージの再ビルド、設定値、テスト方法は [ビルド用 README](https://github.com/radicalgrimoire/docker-helix-p4/blob/main/build/helix-p4d/README.md) を参照してください。
+
+## 証明書アーカイブの取得
+
+`p4d/download-certs.sh` は GitHub Releases から証明書アーカイブをダウンロードして展開します。
+
+```bash
+bash p4d/download-certs.sh --help
+```
+
+主なオプション:
+
+- `-r`, `--repo`: `owner/repository` 形式のリポジトリ
+- `-t`, `--token`: GitHub トークン
+- `-d`, `--dir`: ダウンロード先ディレクトリ
+- `-y`, `--yes`: 確認プロンプトを省略
+
+## トラブルシューティング
+
+- 起動しない場合は、ポート `1666` が使用中でないことと `docker compose logs` の出力を確認してください。
+- 接続できない場合は、接続先が `ssl:localhost:1666` であることを確認し、`p4 trust` を実行してください。
+- コンテナーの状態は `docker ps -a` で確認できます。
+
+## 参照
 
 - [Perforce Helix Core Documentation](https://www.perforce.com/manuals/p4sag/)
-- [Container Image](https://github.com/radicalgrimoire/docker-helix-p4/pkgs/container/docker-helix-p4%2Fhelix-p4d)
+- [コンテナーイメージ](https://github.com/radicalgrimoire/docker-helix-p4/pkgs/container/docker-helix-p4%2Fhelix-p4d)
 - [Helix Authentication Extension](https://github.com/perforce/helix-authentication-extension)
-
-## Notes
-
-This setup is intended for development and validation. For production, at minimum, design and validate:
-
-- Authentication and authorization
-- Network restrictions
-- Backup and restore procedures
-- Monitoring and alerting
-- Certificate distribution and rotation
