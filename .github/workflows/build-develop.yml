@@ -33,6 +33,7 @@ on:
         options:
           - helix-p4d
           - helix-proxy
+          - helix-auth-svc
         default: 'helix-p4d'
 
 jobs:
@@ -58,29 +59,17 @@ jobs:
           COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s" HEAD)
           echo "Auther: ${COMMIT_AUTHOR} / ${COMMIT_MESSAGE}"
 
-  # Check if today is the designated day to push (Monday) or if manually triggered.
-  # Uses external reusable workflow for day checking logic
-  check-day:
-    needs: info
-    uses: radicalgrimoire/radicalgrimoire/.github/workflows/check-day.yml@main
-    with:
-      schedule_type: 'weekly'
-      target_value: '1'      # Monday
-      timezone: 'Asia/Tokyo'
-
   test:
-    needs: [info, check-day]
+    needs: info
     uses: ./.github/workflows/test.yml
     with:
-      should_push: ${{ needs.check-day.outputs.should-push }}
       source_ref: ${{ inputs.source_ref || 'main' }}
       build_path: ${{ inputs.build_path || 'helix-p4d' }}
     secrets: inherit
 
-  # Get P4D version step
+  # Get image version
   get-version:
-    needs: [check-day, test]
-    if: needs.check-day.outputs.should-push == 'true'
+    needs: test
     uses: ./.github/workflows/get-version.yml
     with:
       source_ref: ${{ inputs.source_ref || 'main' }}
@@ -92,8 +81,7 @@ jobs:
   # TAG_SUFFIX="nightly-$(date +'%Y%m%d')"
   push:
     uses: ./.github/workflows/publish.yml
-    needs: [check-day, get-version]
-    if: needs.check-day.outputs.should-push == 'true'
+    needs: get-version
     permissions:
       contents: read
       packages: write
