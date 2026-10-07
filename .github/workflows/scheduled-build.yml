@@ -25,3 +25,10 @@ jobs:
       source_ref: main
       build_path: helix-proxy
     secrets: inherit
+
+  helix-auth-svc:
+    uses: ./.github/workflows/build-develop.yml
+    with:
+      source_ref: main
+      build_path: helix-auth-svc
+    secrets: inherit
