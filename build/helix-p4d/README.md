@@ -53,7 +53,9 @@ in as the configured user, and verifies the server information.
 
 - Initializes the server with `configure-helix-p4d.sh`
 - Runs `p4 trust` and `p4 login`
-- Sets server configuration values such as `server.extensions.allow.unsigned`
+- Sets server configuration values including `server.extensions.allow.unsigned`
+  and `dm.user.noautocreate=2`, which restricts creation of user records to
+  `super` users
 - Registers the case consistency trigger
 - Imports the admin group definition from `admin.txt`
 
