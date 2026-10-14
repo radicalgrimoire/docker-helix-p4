@@ -27,6 +27,7 @@ $P4PASSWD
 EOF
 
 run_p4_as_perforce p4 configure set server.extensions.allow.unsigned=1
+run_p4_as_perforce p4 configure set dm.user.noautocreate=2
 run_p4_as_perforce p4 configure set net.keepalive.idle=10
 run_p4_as_perforce p4 configure set net.keepalive.interval=30
 run_p4_as_perforce p4 configure set net.keepalive.count=3
