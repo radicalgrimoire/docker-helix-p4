@@ -10,6 +10,9 @@ on:
       build_path:
         required: true
         type: string
+    secrets:
+      GEMINI_API_KEY:
+        required: true
 
 permissions:
   contents: read
@@ -42,7 +45,14 @@ jobs:
           scan-type: image
           input: ${{ steps.build.outputs.image_name }}.tar
           scanners: vuln
-          format: table
+          format: json
+          output: trivy-report.json
           severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
           ignore-unfixed: false
           exit-code: '0'
+
+      - name: Summarize scan with Gemini
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-2.5-flash' }}
+        run: python3 scripts/summarize_trivy.py trivy-report.json
