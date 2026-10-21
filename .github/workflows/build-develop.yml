@@ -67,6 +67,16 @@ jobs:
       build_path: ${{ inputs.build_path || 'helix-p4d' }}
     secrets: inherit
 
+  scan:
+    needs: test
+    if: inputs.build_path == 'helix-auth-svc'
+    uses: ./.github/workflows/scan.yml
+    permissions:
+      contents: read
+    with:
+      source_ref: ${{ inputs.source_ref || 'main' }}
+      build_path: ${{ inputs.build_path || 'helix-p4d' }}
+
   # Get image version
   get-version:
     needs: test
@@ -81,7 +91,8 @@ jobs:
   # TAG_SUFFIX="nightly-$(date +'%Y%m%d')"
   push:
     uses: ./.github/workflows/publish.yml
-    needs: get-version
+    needs: [get-version, scan]
+    if: ${{ !cancelled() && needs.get-version.result == 'success' && (needs.scan.result == 'success' || needs.scan.result == 'skipped') }}
     permissions:
       contents: read
       packages: write

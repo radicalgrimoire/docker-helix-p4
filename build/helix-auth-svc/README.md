@@ -31,3 +31,20 @@ bash build/helix-auth-svc/docker-test.sh ./build/helix-auth-svc
 ```
 
 Runtime configuration and Docker Compose deployment are intentionally not included yet.
+
+## Experimental vulnerability scan
+
+When the [build workflow](../../.github/workflows/build-develop.yml) builds
+`helix-auth-svc`, it calls the reusable [scan workflow](../../.github/workflows/scan.yml)
+as an independent job after testing. The scan downloads the saved Docker image
+artifact and scans the archive with Trivy in parallel with version detection.
+Publishing waits for both jobs. For other images, the scan is skipped and
+publishing proceeds after version detection. Test-only workflows do not call the
+scan workflow.
+
+The Trivy action is pinned to a commit and the scanner to an explicit version.
+The scan reports OS and language-package vulnerabilities at all severities,
+including those without a fix. Findings do not block publishing during this
+trial, but scanner errors do fail the job. Results are printed as a table in the
+scan job's `Scan Docker image` step log; no report artifact is uploaded. No
+Docker Hub credentials or Code scanning upload permissions are required.
