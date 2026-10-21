@@ -166,6 +166,7 @@ class ReportTests(unittest.TestCase):
             output = io.StringIO()
             env = {
                 "GEMINI_API_KEY": "test-key", "GEMINI_MODEL": summary.DEFAULT_MODEL,
+                "ENABLE_AI_SUMMARY": "true",
                 "GITHUB_STEP_SUMMARY": str(summary_path),
             }
             with patch.dict(os.environ, env), redirect_stdout(output):
@@ -183,13 +184,38 @@ class ReportTests(unittest.TestCase):
             input_path = Path(directory) / "report.json"
             summary_path = Path(directory) / "summary.md"
             input_path.write_text(json.dumps(fixture()), encoding="utf-8")
-            env = {"GEMINI_API_KEY": "", "GITHUB_STEP_SUMMARY": str(summary_path)}
+            env = {
+                "GEMINI_API_KEY": "", "ENABLE_AI_SUMMARY": "true",
+                "GITHUB_STEP_SUMMARY": str(summary_path),
+            }
             with patch.dict(os.environ, env), redirect_stdout(io.StringIO()):
                 with self.assertRaisesRegex(ValueError, "GEMINI_API_KEY"):
                     summary.main([str(input_path)])
             markdown = summary_path.read_text(encoding="utf-8")
             self.assertIn("CVE-2026-1234", markdown)
             self.assertIn("Gemini summary failed", markdown)
+
+    def test_ai_is_disabled_by_default_and_when_explicitly_false(self):
+        for enabled in (None, "false"):
+            with self.subTest(enabled=enabled):
+                with tempfile.TemporaryDirectory(prefix="trivy-summary-test-") as directory:
+                    input_path = Path(directory) / "report.json"
+                    summary_path = Path(directory) / "summary.md"
+                    input_path.write_text(json.dumps(fixture()), encoding="utf-8")
+                    env = {"GEMINI_API_KEY": "", "GITHUB_STEP_SUMMARY": str(summary_path)}
+                    if enabled is not None:
+                        env["ENABLE_AI_SUMMARY"] = enabled
+                    output = io.StringIO()
+                    with patch.dict(os.environ, env, clear=True), redirect_stdout(output):
+                        with patch.object(summary, "urlopen") as mock:
+                            summary.main([str(input_path)])
+                    mock.assert_not_called()
+                    markdown = summary_path.read_text(encoding="utf-8")
+                    self.assertEqual(markdown, output.getvalue())
+                    self.assertIn("| 0 | 1 | 0 | 0 | 0 |", markdown)
+                    self.assertIn("CVE-2026-1234", markdown)
+                    self.assertIn("AI formatting is disabled", markdown)
+                    self.assertNotIn("Gemini summary failed", markdown)
 
 
 if __name__ == "__main__":
