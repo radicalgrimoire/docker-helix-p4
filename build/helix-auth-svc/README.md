@@ -45,6 +45,38 @@ scan workflow.
 The Trivy action is pinned to a commit and the scanner to an explicit version.
 The scan reports OS and language-package vulnerabilities at all severities,
 including those without a fix. Findings do not block publishing during this
-trial, but scanner errors do fail the job. Results are printed as a table in the
-scan job's `Scan Docker image` step log; no report artifact is uploaded. No
-Docker Hub credentials or Code scanning upload permissions are required.
+trial, but scanner errors do fail the job.
+
+### Gemini report
+
+Register a repository Actions secret named `GEMINI_API_KEY`. Optionally set the
+repository Actions variable `GEMINI_MODEL` (default: `gemini-2.5-flash`) to choose
+an available Gemini text model supporting structured JSON output.
+
+After Trivy produces JSON, [the Python report script](../../scripts/summarize_trivy.py)
+sends only OS family/version, finding counts, detected language-package target
+count, and package vulnerability fields (package name, CVE/advisory ID, severity,
+installed/fixed versions, title, and package type) to the Google Gemini API.
+Source code, image contents, environment variables, file paths, and the complete
+Trivy metadata are not sent. Gemini API usage is subject to Google's pricing and
+data-use terms.
+
+The Actions run Summary and `Summarize scan with Gemini` step log contain exact
+Trivy counts, a collapsible findings table, and an AI-generated Japanese overview,
+grouped issue highlights, and reporting notes. Gemini only reformats the supplied
+findings; it is not asked for independent risk assessments or remediation advice.
+Counts are per package/vulnerability pair, not unique CVEs. AI summaries require
+human review and do not establish exploitability or safety. No report artifact is
+uploaded.
+
+Missing API credentials, API errors, or invalid AI output fail the scan job and
+block publishing; the deterministic Trivy summary remains available if AI
+generation fails. No Docker Hub credentials or Code scanning upload permissions
+are required. Only the summarization step receives `GEMINI_API_KEY`.
+
+The script uses only the Python standard library; no pip installation is needed.
+Run its offline tests with:
+
+```bash
+python3 -B -m unittest discover -s scripts -p 'test_summarize_trivy.py'
+```

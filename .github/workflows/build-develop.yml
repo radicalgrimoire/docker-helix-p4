@@ -19,6 +19,9 @@ on:
         required: false
         type: string
         default: 'helix-p4d'
+    secrets:
+      GEMINI_API_KEY:
+        required: false
 
   workflow_dispatch:
     inputs:
@@ -76,6 +79,8 @@ jobs:
     with:
       source_ref: ${{ inputs.source_ref || 'main' }}
       build_path: ${{ inputs.build_path || 'helix-p4d' }}
+    secrets:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
   # Get image version
   get-version:
