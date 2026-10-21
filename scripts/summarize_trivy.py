@@ -190,11 +190,14 @@ def publish(text):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="Format Trivy results using Gemini.")
+    parser = argparse.ArgumentParser(description="Summarize Trivy results with optional Gemini formatting.")
     parser.add_argument("report", type=Path)
     args = parser.parse_args(argv)
     data = collect_report(json.loads(args.report.read_text(encoding="utf-8")))
     publish(render_facts(data))
+    if os.environ.get("ENABLE_AI_SUMMARY", "false").lower() != "true":
+        publish("AI formatting is disabled; only Trivy results are shown.")
+        return
     try:
         report = request_report(
             data, os.environ.get("GEMINI_API_KEY"),
