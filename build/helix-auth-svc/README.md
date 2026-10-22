@@ -1,18 +1,16 @@
 # Building the Helix Authentication Service Image
 
-This directory builds the Perforce Helix Authentication Service (HAS) image from the official Perforce APT package. It does not use the published `perforce/helix-auth-svc` image.
+This directory builds the Perforce Helix Authentication Service (HAS) image from the HAS source tag on GitHub, on top of Ubuntu and a Node.js runtime that we control. It uses neither the published `perforce/helix-auth-svc` image nor the `helix-auth-svc` APT package (which bundles its own, Perforce-paced Node.js).
 
-## Package installation
+## Why self-built
 
-The Dockerfile follows the same Ubuntu Noble and Perforce APT repository setup as the Helix Core image. It installs the latest `helix-auth-svc` package available when the image is built:
+Node.js security fixes can be adopted without waiting for a Perforce package release:
 
-```bash
-apt-get install helix-auth-svc
-```
+- `NODE_MAJOR` (Dockerfile `ARG`, default `24`, same as the official image) selects the Node.js major line. The image is built from `ubuntu:noble` and installs the latest `v${NODE_MAJOR}.x` release from nodejs.org, verified against its `SHASUMS256.txt`. Rebuild to pick up patched Node and Ubuntu packages (`apt-get upgrade` runs in the final stage). HAS requires Node >= 20.
+- `HAS_VERSION` in `.env` selects the HAS tag (default `2025.2`, matching the previous deployment). Production dependencies come from `npm ci --omit=dev`, so `package-lock.json` versions are used.
+- The final image has no build tools and runs as the unprivileged `ubuntu` user from `/opt/perforce/helix-auth-svc`.
 
-`.env` defines the local image name only. It contains no SAML, Azure Entra ID, certificate, or other runtime configuration. The package installs HAS and its Node.js runtime under `/opt/perforce/helix-auth-svc`. The image starts the package's `bin/www.js` directly rather than starting a systemd service.
-
-The official "Easy way to install Node.js" instructions apply to manual HAS installations. Do not install Node.js separately in this image: the version-pinned `helix-auth-svc` package includes its compatible Node.js runtime and service dependencies.
+`.env` contains only build settings (image name, HAS version). No SAML or other runtime configuration belongs here.
 
 ## Build
 
@@ -24,7 +22,7 @@ bash build/helix-auth-svc/docker-build.sh Dockerfile ./build/helix-auth-svc
 
 ## Test
 
-After building, verify that HAS is installed and that its bundled Node.js runtime starts:
+After building, verify the HAS version and the Node.js runtime:
 
 ```bash
 bash build/helix-auth-svc/docker-test.sh ./build/helix-auth-svc
