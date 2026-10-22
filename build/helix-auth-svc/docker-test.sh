@@ -16,12 +16,12 @@ set +a
 
 : "${IMAGE_NAME:?IMAGE_NAME must be set in $ENV_PATH}"
 
-VERSION=$(docker run --rm --entrypoint dpkg-query "$IMAGE_NAME" -W -f='${Version}' helix-auth-svc)
+VERSION=$(docker run --rm --entrypoint node "$IMAGE_NAME" -p "require('/opt/perforce/helix-auth-svc/package.json').version")
 
 if [ -z "$VERSION" ]; then
-    echo "Helix Authentication Service package version was not reported." >&2
+    echo "Helix Authentication Service version was not reported." >&2
     exit 1
 fi
 
-echo "Installed Helix Authentication Service package version: $VERSION"
-docker run --rm --entrypoint /opt/perforce/helix-auth-svc/bin/node "$IMAGE_NAME" --version
+echo "Installed Helix Authentication Service version: $VERSION"
+docker run --rm --entrypoint node "$IMAGE_NAME" --version

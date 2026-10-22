@@ -1,0 +1,18 @@
+version: '3'
+
+# Trial setup: starts HAS on http://localhost:3000 without an identity provider.
+# For real SAML, set the SAML_* variables (see README.md).
+services:
+  helix-auth-svc:
+    container_name: helix-auth-svc
+    image: 'ghcr.io/radicalgrimoire/docker-helix-p4/helix-auth-svc:latest'
+    environment:
+      PROTOCOL: http
+      SVC_BASE_URI: ${SVC_BASE_URI:-http://localhost:3000}
+      DEFAULT_PROTOCOL: saml
+      SAML_SP_ENTITY_ID: ${SAML_SP_ENTITY_ID:-dev-auth}
+      # Passed through only when set in the shell, so empty values never reach the service
+      SAML_IDP_METADATA_URL:
+      TRUST_PROXY:
+    ports:
+      - "3000:3000"

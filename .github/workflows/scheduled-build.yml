@@ -26,7 +26,31 @@ jobs:
       build_path: helix-proxy
     secrets: inherit
 
+  # helix-auth-svc is built from the upstream git tag, so record the latest tag first
+  update-auth-svc-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - name: Record latest HAS tag in .env
+        run: bash build/helix-auth-svc/update-has-version.sh build/helix-auth-svc
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- build/helix-auth-svc/.env; then
+            echo "HAS_VERSION unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add build/helix-auth-svc/.env
+          git commit -m "chore(helix-auth-svc): update HAS_VERSION to latest tag"
+          git push origin HEAD:main
+
   helix-auth-svc:
+    needs: update-auth-svc-version
     uses: ./.github/workflows/build-develop.yml
     with:
       source_ref: main
