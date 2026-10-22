@@ -45,8 +45,11 @@ RUN cd client \
     && npm ci --no-audit --no-fund \
     && npx vite build --outDir ../private/admin --emptyOutDir
 
-# Production dependencies only; optional ones (unix-dgram, for winston-syslog) are skipped as upstream does
-RUN npm ci --omit=dev --omit=optional --no-audit --no-fund \
+# Production dependencies only; optional ones (unix-dgram, for winston-syslog) are skipped as upstream does.
+# Apply security fixes without modifying the upstream HAS repository or release tag.
+RUN npm pkg set 'overrides.@xmldom/xmldom=0.9.12' 'overrides.axios=1.20.0' \
+    && npm install --package-lock-only --ignore-scripts --omit=dev --omit=optional --no-audit --no-fund \
+    && npm ci --omit=dev --omit=optional --no-audit --no-fund \
     && npm cache clean --force
 
 FROM ${UBUNTU_IMAGE}
