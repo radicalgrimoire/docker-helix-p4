@@ -7,7 +7,7 @@ This directory builds the Perforce Helix Authentication Service (HAS) image from
 Node.js security fixes can be adopted without waiting for a Perforce package release:
 
 - `NODE_MAJOR` (Dockerfile `ARG`, default `24`, same as the official image) selects the Node.js major line. The image is built from `ubuntu:noble` and installs the latest `v${NODE_MAJOR}.x` release from nodejs.org, verified against its `SHASUMS256.txt`. Rebuild to pick up patched Node and Ubuntu packages (`apt-get upgrade` runs in the final stage). HAS requires Node >= 20.
-- `HAS_VERSION` in `.env` selects the HAS tag (default `2025.2`, matching the previous deployment). Production dependencies come from `npm ci --omit=dev`, so `package-lock.json` versions are used.
+- `HAS_VERSION` in `.env` selects the HAS tag. Production dependencies come from `npm ci --omit=dev`; the build adds npm overrides for `@xmldom/xmldom` `0.9.12` and `axios` `1.20.0` before regenerating the lockfile.
 - The final image has no build tools and runs as the unprivileged `ubuntu` user from `/opt/perforce/helix-auth-svc`.
 
 `.env` contains only build settings (image name, HAS version). No SAML or other runtime configuration belongs here.
