@@ -22,8 +22,8 @@ permissions:
   contents: read
 
 jobs:
-  test:
-    uses: ./.github/workflows/test.yml
+  helix-p4d:
+    uses: ./.github/workflows/build.yml
     with:
       should_push: 'false'
       source_ref: ${{ inputs.source_ref || github.sha }}
@@ -31,9 +31,17 @@ jobs:
     secrets: inherit
 
   helix-proxy:
-    uses: ./.github/workflows/test.yml
+    uses: ./.github/workflows/build.yml
     with:
       should_push: 'false'
       source_ref: ${{ inputs.source_ref || github.sha }}
       build_path: helix-proxy
+    secrets: inherit
+
+  helix-auth-svc:
+    uses: ./.github/workflows/build.yml
+    with:
+      should_push: 'false'
+      source_ref: ${{ inputs.source_ref || github.sha }}
+      build_path: helix-auth-svc
     secrets: inherit
