@@ -1,4 +1,4 @@
-name: test
+name: build
 
 on:
   workflow_call:
@@ -16,7 +16,7 @@ on:
         type: string
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

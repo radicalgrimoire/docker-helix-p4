@@ -80,7 +80,7 @@ The `.github/workflows` directory includes:
   entry point
 - `scheduled-build.yml`: Scheduled build entry point; each service supplies
   its own build path
-- `test.yml`: Reusable test workflow
+- `build.yml`: Reusable image build, integration test, and artifact upload workflow
 - `get-version.yml`: Extracts `p4d -V` from the built image artifact
 - `publish.yml`: Publishes tagged images to GHCR
 

@@ -62,16 +62,16 @@ jobs:
           COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s" HEAD)
           echo "Auther: ${COMMIT_AUTHOR} / ${COMMIT_MESSAGE}"
 
-  test:
+  build:
     needs: info
-    uses: ./.github/workflows/test.yml
+    uses: ./.github/workflows/build.yml
     with:
       source_ref: ${{ inputs.source_ref || 'main' }}
       build_path: ${{ inputs.build_path || 'helix-p4d' }}
     secrets: inherit
 
   scan:
-    needs: test
+    needs: build
     if: inputs.build_path == 'helix-auth-svc'
     uses: ./.github/workflows/scan.yml
     permissions:
@@ -84,7 +84,7 @@ jobs:
 
   # Get image version
   get-version:
-    needs: test
+    needs: build
     uses: ./.github/workflows/get-version.yml
     with:
       source_ref: ${{ inputs.source_ref || 'main' }}
