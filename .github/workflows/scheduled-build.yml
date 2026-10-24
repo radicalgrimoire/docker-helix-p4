@@ -4,8 +4,8 @@ run-name: Scheduled Build by @${{ github.actor }}
 
 on:
   schedule:
-    # 9:00 JST = 0:00 UTC (JST = UTC + 9 hours)
-    - cron: '0 0 * * 1'
+    # Daily at 01:00 JST = 16:00 UTC on the previous day
+    - cron: '0 16 * * *'
 
 permissions:
   contents: read
