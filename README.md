@@ -24,11 +24,6 @@ also removes any other tags pointing to it, so those tags may be temporarily
 unavailable (and remain absent if publishing fails).
 Builds for the same service are serialized across deletion and publication.
 
-Temporary deletion test: the caller currently bypasses `delete-image.yml`, and
-publishing uses a numbered version tag plus a run-specific image label to create
-a second, distinct image version. Restore the deletion job and unnumbered
-publishing after verifying that both versions exist.
-
 Only the definitions are centralized. Runs and jobs still belong to this
 repository. Checkout uses this repository and `source_ref`; artifacts remain in
 the same run, and images are still published under
