@@ -29,4 +29,4 @@ done < "$ENV_PATH"
 
 : "${IMAGE_NAME:?IMAGE_NAME must be set in $ENV_PATH}"
 
-docker build -t "$IMAGE_NAME" $BUILD_ARGS -f "$BUILD_PATH/$DOCKERFILE_NAME" "$BUILD_PATH"
+docker build -t "$IMAGE_NAME" $BUILD_ARGS --build-arg "HAE_CACHE_BUST=$(date +%s%N)" -f "$BUILD_PATH/$DOCKERFILE_NAME" "$BUILD_PATH"
