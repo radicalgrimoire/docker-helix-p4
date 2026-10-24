@@ -80,9 +80,15 @@ The `.github/workflows` directory includes:
   entry point
 - `scheduled-build.yml`: Scheduled build entry point; each service supplies
   its own build path
-- `build.yml`: Reusable image build, integration test, and artifact upload workflow
-- `get-version.yml`: Extracts `p4d -V` from the built image artifact
-- `publish.yml`: Publishes tagged images to GHCR
+
+These entry points call reusable definitions in
+`radicalgrimoire/radicalgrimoire` at `@main`:
+
+- [build.yml](https://github.com/radicalgrimoire/radicalgrimoire/blob/main/.github/workflows/build.yml): Reusable image build, integration test, and artifact upload workflow
+- [get-version.yml](https://github.com/radicalgrimoire/radicalgrimoire/blob/main/.github/workflows/get-version.yml): Extracts `p4d -V` from the built image artifact
+- [publish.yml](https://github.com/radicalgrimoire/radicalgrimoire/blob/main/.github/workflows/publish.yml): Publishes tagged images to GHCR
+
+Runs, artifacts, and the GHCR image namespace remain in `docker-helix-p4`.
 
 Main publish tags:
 
