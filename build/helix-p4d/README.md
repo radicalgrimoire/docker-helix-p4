@@ -14,6 +14,22 @@ base image. For running the published image with Docker Compose, see
 - `files/init.sh`: First-time initialization logic
 - `files/run.sh`: Startup logic
 
+## Build Stages
+
+The Dockerfile uses two stages:
+
+- `auth-extension`: Lists remote Git tags, selects the highest version matching
+  `YYYY.N` or `YYYY.N.N` using version sorting, and shallow-clones that tag of
+  the Helix Authentication Extension. Prerelease tags are excluded. The selected
+  version is printed in the build log, and Git metadata is removed after cloning.
+  Tag lookup or clone failures, including an empty release-tag list, fail the build.
+- Final runtime stage: Installs Helix Core and P4Python through APT and copies
+  the extension source from `auth-extension`. Git is not installed in this stage.
+
+Both stages use `ubuntu:noble`. Server initialization still runs during the
+image build; existing build arguments, startup behavior, and the extension install path
+(`/opt/helix-authentication-extension`) are unchanged.
+
 ## Build the Image
 
 From the repository root:
@@ -21,6 +37,12 @@ From the repository root:
 ```bash
 bash build/helix-p4d/docker-build.sh Dockerfile ./build/helix-p4d
 ```
+
+The wrapper supplies a fresh `HAE_CACHE_BUST` build argument on every invocation
+so the extension tag lookup runs again, while the preceding tool-installation
+layer can remain cached. The latest release is therefore resolved on each build.
+When invoking `docker build` directly, also pass a fresh value with
+`--build-arg HAE_CACHE_BUST="$(date +%s%N)"` to avoid reusing a cached tag lookup.
 
 `docker-build.sh` passes the variables in `build/helix-p4d/.env` as
 `--build-arg` values, except `IMAGE_NAME`, which specifies the target image

@@ -1,3 +1,22 @@
+FROM ubuntu:noble AS auth-extension
+
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y ca-certificates git \
+    && rm -rf /var/lib/apt/lists/*
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+ARG HAE_CACHE_BUST
+RUN set -eu; \
+    REPO="https://github.com/perforce/helix-authentication-extension.git"; \
+    HAE_VERSION=$(git ls-remote --tags --refs "$REPO" \
+      | sed -nE 's|.*refs/tags/([0-9]{4}\.[0-9]+(\.[0-9]+)?)$|\1|p' \
+      | sort -V | tail -n 1); \
+    : "${HAE_VERSION:?No release tags found for Helix Authentication Extension}"; \
+    echo "Fetching Helix Authentication Extension ${HAE_VERSION}"; \
+    git clone --depth 1 --branch "$HAE_VERSION" "$REPO" /opt/helix-authentication-extension; \
+    rm -rf /opt/helix-authentication-extension/.git
+
 FROM ubuntu:noble
 LABEL org.opencontainers.image.maintainer="ueno.s <ueno.s@gamestudio.co.jp>"
 
@@ -8,6 +27,7 @@ COPY files/p4.* /etc/logrotate.d/
 COPY files/CheckCaseTrigger*.py /usr/local/bin/
 COPY files/P4Triggers.py /usr/local/bin/P4Triggers.py
 COPY files/admin.txt /opt/perforce/admin.txt
+COPY --from=auth-extension /opt/helix-authentication-extension /opt/helix-authentication-extension
 
 ARG P4NAME
 ARG P4PORT
@@ -28,7 +48,7 @@ ENV P4NAME=$P4NAME \
 
 RUN ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime \
     && apt-get update \
-    && apt-get install -y gnupg language-pack-ja-base language-pack-ja tzdata curl jq git openssl cron logrotate sudo \
+    && apt-get install -y gnupg language-pack-ja-base language-pack-ja tzdata curl jq openssl cron logrotate sudo \
     && echo 'export LANG=ja_JP.UTF-8' >> ~/.bashrc \
     && echo 'export LANGUAGE="ja_JP:ja"' >> ~/.bashrc \
     && curl -sS https://package.perforce.com/perforce.pubkey | gpg --dearmor -o /usr/share/keyrings/perforce.gpg \
@@ -37,8 +57,6 @@ RUN ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime \
     && chmod +x /usr/local/bin/init.sh \
     && chmod +x /usr/local/bin/run.sh \
     && chmod 644 /etc/logrotate.d/p4.* \
-    && git clone https://github.com/perforce/helix-authentication-extension.git /opt/helix-authentication-extension \
-    && apt-get remove -y git \
     && apt-get autoremove -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
