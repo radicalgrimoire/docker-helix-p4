@@ -64,7 +64,7 @@ jobs:
 
   build:
     needs: info
-    uses: ./.github/workflows/build.yml
+    uses: radicalgrimoire/radicalgrimoire/.github/workflows/build.yml@main
     with:
       source_ref: ${{ inputs.source_ref || 'main' }}
       build_path: ${{ inputs.build_path || 'helix-p4d' }}
@@ -73,7 +73,7 @@ jobs:
   scan:
     needs: build
     if: inputs.build_path == 'helix-auth-svc'
-    uses: ./.github/workflows/scan.yml
+    uses: radicalgrimoire/radicalgrimoire/.github/workflows/scan.yml@main
     permissions:
       contents: read
     with:
@@ -85,7 +85,7 @@ jobs:
   # Get image version
   get-version:
     needs: build
-    uses: ./.github/workflows/get-version.yml
+    uses: radicalgrimoire/radicalgrimoire/.github/workflows/get-version.yml@main
     with:
       source_ref: ${{ inputs.source_ref || 'main' }}
       build_path: ${{ inputs.build_path || 'helix-p4d' }}
@@ -95,7 +95,7 @@ jobs:
   # See also https://docs.docker.com/docker-hub/builds/
   # TAG_SUFFIX="nightly-$(date +'%Y%m%d')"
   push:
-    uses: ./.github/workflows/publish.yml
+    uses: radicalgrimoire/radicalgrimoire/.github/workflows/publish.yml@main
     needs: [get-version, scan]
     if: ${{ !cancelled() && needs.get-version.result == 'success' && (needs.scan.result == 'success' || needs.scan.result == 'skipped') }}
     permissions:

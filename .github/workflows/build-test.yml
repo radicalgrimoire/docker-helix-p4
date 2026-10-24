@@ -23,7 +23,7 @@ permissions:
 
 jobs:
   helix-p4d:
-    uses: ./.github/workflows/build.yml
+    uses: radicalgrimoire/radicalgrimoire/.github/workflows/build.yml@main
     with:
       should_push: 'false'
       source_ref: ${{ inputs.source_ref || github.sha }}
@@ -32,7 +32,7 @@ jobs:
 
   helix-proxy:
     needs: helix-p4d
-    uses: ./.github/workflows/build.yml
+    uses: radicalgrimoire/radicalgrimoire/.github/workflows/build.yml@main
     with:
       should_push: 'false'
       source_ref: ${{ inputs.source_ref || github.sha }}
@@ -41,7 +41,7 @@ jobs:
 
   helix-auth-svc:
     needs: helix-proxy
-    uses: ./.github/workflows/build.yml
+    uses: radicalgrimoire/radicalgrimoire/.github/workflows/build.yml@main
     with:
       should_push: 'false'
       source_ref: ${{ inputs.source_ref || github.sha }}

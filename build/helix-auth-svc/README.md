@@ -33,12 +33,16 @@ Runtime configuration and Docker Compose deployment are intentionally not includ
 ## Experimental vulnerability scan
 
 When the [build workflow](../../.github/workflows/build-develop.yml) builds
-`helix-auth-svc`, it calls the reusable [scan workflow](../../.github/workflows/scan.yml)
+`helix-auth-svc`, it calls the reusable [scan workflow](https://github.com/radicalgrimoire/radicalgrimoire/blob/main/.github/workflows/scan.yml)
 as an independent job after testing. The scan downloads the saved Docker image
 artifact and scans the archive with Trivy in parallel with version detection.
 Publishing waits for both jobs. For other images, the scan is skipped and
 publishing proceeds after version detection. Test-only workflows do not call the
 scan workflow.
+
+The scan definition is maintained in `radicalgrimoire/radicalgrimoire` and called
+at `@main`. Checkout, the report script, artifacts, secrets, and variables still
+come from the calling `docker-helix-p4` repository.
 
 The Trivy action is pinned to a commit and the scanner to an explicit version.
 The scan reports OS and language-package vulnerabilities at all severities,
