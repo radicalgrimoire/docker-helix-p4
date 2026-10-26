@@ -26,6 +26,14 @@ jobs:
       build_path: helix-proxy
     secrets: inherit
 
+  helix-swarm:
+    needs: helix-proxy
+    uses: ./.github/workflows/build-develop.yml
+    with:
+      source_ref: main
+      build_path: helix-swarm
+    secrets: inherit
+
   # helix-auth-svc is built from the upstream git tag, so record the latest tag first
   update-auth-svc-version:
     runs-on: ubuntu-latest
@@ -50,7 +58,7 @@ jobs:
           git push origin HEAD:main
 
   helix-auth-svc:
-    needs: update-auth-svc-version
+    needs: [helix-swarm, update-auth-svc-version]
     uses: ./.github/workflows/build-develop.yml
     with:
       source_ref: main

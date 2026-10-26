@@ -39,8 +39,17 @@ jobs:
       build_path: helix-proxy
     secrets: inherit
 
-  helix-auth-svc:
+  helix-swarm:
     needs: helix-proxy
+    uses: radicalgrimoire/radicalgrimoire/.github/workflows/build.yml@main
+    with:
+      should_push: 'false'
+      source_ref: ${{ inputs.source_ref || github.sha }}
+      build_path: helix-swarm
+    secrets: inherit
+
+  helix-auth-svc:
+    needs: helix-swarm
     uses: radicalgrimoire/radicalgrimoire/.github/workflows/build.yml@main
     with:
       should_push: 'false'

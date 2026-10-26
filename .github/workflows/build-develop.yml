@@ -36,6 +36,7 @@ on:
         options:
           - helix-p4d
           - helix-proxy
+          - helix-swarm
           - helix-auth-svc
         default: 'helix-p4d'
 
@@ -76,7 +77,7 @@ jobs:
 
   scan:
     needs: build
-    if: inputs.build_path == 'helix-auth-svc'
+    if: inputs.build_path == 'helix-auth-svc' || inputs.build_path == 'helix-swarm'
     uses: radicalgrimoire/radicalgrimoire/.github/workflows/scan.yml@main
     permissions:
       contents: read

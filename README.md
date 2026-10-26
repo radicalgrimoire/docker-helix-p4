@@ -2,6 +2,8 @@
 
 - [Helix Core (P4D)](helix-p4d/README.md)
 - [Helix Proxy (P4P)](helix-proxy/README.md)
+- [Helix Swarm build](build/helix-swarm/README.md)
+- [P4 Code Review deployment](helix-swarm/README.md)
 - [Helix Authentication Service build](build/helix-auth-svc/README.md)（テスト中）
 
 ## CI/CD workflows
@@ -14,7 +16,7 @@ in [radicalgrimoire/radicalgrimoire](https://github.com/radicalgrimoire/radicalg
 entry point.
 
 Scheduled builds run daily at 01:00 JST (16:00 UTC on the previous day) for
-Helix Core, Helix Proxy, and Helix Authentication Service. Images use the upstream
+Helix Core, Helix Proxy, Helix Swarm, and Helix Authentication Service. Images use the upstream
 version as their tag, without a workflow run number. The publish pipeline calls
 `get-version.yml` -> `delete-image.yml` -> `publish.yml`, with deletion gated on
 the required scan succeeding (or being skipped for services without a scan).

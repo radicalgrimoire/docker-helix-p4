@@ -1,0 +1,19 @@
+name: helix-swarm
+
+services:
+  p4-code-review:
+    image: ${SWARM_IMAGE:-ghcr.io/radicalgrimoire/docker-helix-p4/helix-swarm:2026.4}
+    init: true
+    restart: unless-stopped
+    ports:
+      - "${SWARM_HTTP_PORT:-80}:80"
+      - "${SWARM_HTTPS_PORT:-443}:443"
+    volumes:
+      - swarm-data:/opt/perforce/swarm/data
+      - swarm-file:/opt/perforce/etc/file
+
+volumes:
+  swarm-data:
+    name: swarm_server_swarm-data
+  swarm-file:
+    name: swarm_server_file
