@@ -114,6 +114,7 @@ jobs:
   delete-image:
     uses: radicalgrimoire/radicalgrimoire/.github/workflows/delete-image.yml@main
     needs: [get-version, push]
+    if: ${{ !cancelled() && needs.get-version.result == 'success' && needs.push.result == 'success' }}
     permissions:
       contents: read
       packages: write
