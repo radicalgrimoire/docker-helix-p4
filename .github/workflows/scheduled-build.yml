@@ -1,8 +1,9 @@
 name: scheduled-build
 
-run-name: Scheduled Build by @${{ github.actor }}
+run-name: ${{ github.event_name == 'schedule' && 'Scheduled Build' || 'Manual Scheduled Build' }} by @${{ github.actor }}
 
 on:
+  workflow_dispatch:
   schedule:
     # Daily at 01:00 JST = 16:00 UTC on the previous day
     - cron: '0 16 * * *'

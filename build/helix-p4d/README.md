@@ -109,11 +109,12 @@ These entry points call reusable definitions in
 - [build.yml](https://github.com/radicalgrimoire/radicalgrimoire/blob/main/.github/workflows/build.yml): Reusable image build, integration test, and artifact upload workflow
 - [get-version.yml](https://github.com/radicalgrimoire/radicalgrimoire/blob/main/.github/workflows/get-version.yml): Extracts `p4d -V` from the built image artifact
 - [publish.yml](https://github.com/radicalgrimoire/radicalgrimoire/blob/main/.github/workflows/publish.yml): Publishes tagged images to GHCR
+- [delete-image.yml](https://github.com/radicalgrimoire/radicalgrimoire/blob/main/.github/workflows/delete-image.yml): Cleans up untagged images after publication
 
 Runs, artifacts, and the GHCR image namespace remain in `docker-helix-p4`.
 
 Main publish tags:
 
-- `<version>.<run_number>`
+- `<version>`
 - `latest`
 - `nightly` (only on scheduled runs)

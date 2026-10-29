@@ -96,8 +96,9 @@ jobs:
       build_path: ${{ inputs.build_path || 'helix-p4d' }}
     secrets: inherit
 
-  delete-image:
-    uses: radicalgrimoire/radicalgrimoire/.github/workflows/delete-image.yml@main
+  # Push image to GitHub Packages.
+  push:
+    uses: radicalgrimoire/radicalgrimoire/.github/workflows/publish.yml@main
     needs: [get-version, scan]
     if: ${{ !cancelled() && needs.get-version.result == 'success' && (needs.scan.result == 'success' || needs.scan.result == 'skipped') }}
     permissions:
@@ -105,21 +106,20 @@ jobs:
       packages: write
     with:
       version: ${{ needs.get-version.outputs.version }}
+      version_raw: ${{ needs.get-version.outputs.version_raw }}
       source_ref: ${{ inputs.source_ref || 'main' }}
       build_path: ${{ inputs.build_path || 'helix-p4d' }}
     secrets: inherit
 
-  # Push image to GitHub Packages.
-  push:
-    uses: radicalgrimoire/radicalgrimoire/.github/workflows/publish.yml@main
-    needs: [get-version, delete-image]
-    if: ${{ !cancelled() && needs.get-version.result == 'success' && needs.delete-image.result == 'success' }}
+  delete-image:
+    uses: radicalgrimoire/radicalgrimoire/.github/workflows/delete-image.yml@main
+    needs: [get-version, push]
     permissions:
       contents: read
       packages: write
     with:
       version: ${{ needs.get-version.outputs.version }}
-      version_raw: ${{ needs.get-version.outputs.version_raw }}
+      cleanup_untagged: true
       source_ref: ${{ inputs.source_ref || 'main' }}
       build_path: ${{ inputs.build_path || 'helix-p4d' }}
     secrets: inherit
