@@ -24,7 +24,9 @@ The Dockerfile uses two stages:
   version is printed in the build log, and Git metadata is removed after cloning.
   Tag lookup or clone failures, including an empty release-tag list, fail the build.
 - Final runtime stage: Installs Helix Core and P4Python through APT and copies
-  the extension source from `auth-extension`. Git is not installed in this stage.
+  the extension source from `auth-extension`. Before installing the runtime
+  dependencies, it upgrades available Ubuntu packages so a rebuild incorporates
+  current OS security updates. Git is not installed in this stage.
 
 Both stages use `ubuntu:noble`. Server initialization still runs during the
 image build; existing build arguments, startup behavior, and the extension install path

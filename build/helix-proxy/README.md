@@ -23,6 +23,9 @@ From the repository root:
 bash build/helix-proxy/docker-build.sh Dockerfile ./build/helix-proxy
 ```
 
+The runtime stage upgrades available Ubuntu packages before installing its
+dependencies, so rebuilding the image incorporates current OS security updates.
+
 `docker-build.sh` passes the variables in `build/helix-proxy/.env` as
 `--build-arg` values, except `IMAGE_NAME`, which specifies the target image
 tag.

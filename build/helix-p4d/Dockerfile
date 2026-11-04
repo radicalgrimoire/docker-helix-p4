@@ -48,6 +48,7 @@ ENV P4NAME=$P4NAME \
 
 RUN ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime \
     && apt-get update \
+    && apt-get upgrade -y \
     && apt-get install -y gnupg language-pack-ja-base language-pack-ja tzdata curl jq openssl cron logrotate sudo \
     && echo 'export LANG=ja_JP.UTF-8' >> ~/.bashrc \
     && echo 'export LANGUAGE="ja_JP:ja"' >> ~/.bashrc \
