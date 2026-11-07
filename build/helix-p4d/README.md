@@ -102,8 +102,8 @@ The `.github/workflows` directory includes:
 - `build-test.yml`: Build and integration tests for branches
 - `build-develop.yml`: Reusable test-to-publish pipeline and manual Core build
   entry point
-- `scheduled-build.yml`: Scheduled build entry point; each service supplies
-  its own build path
+- `scheduled-build-helix-*.yml`: Independent scheduled build entry points for
+  each service
 
 These entry points call reusable definitions in
 `radicalgrimoire/radicalgrimoire` at `@main`:

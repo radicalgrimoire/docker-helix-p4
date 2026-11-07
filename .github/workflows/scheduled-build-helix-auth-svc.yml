@@ -1,6 +1,6 @@
-name: scheduled-build
+name: scheduled-build-helix-auth-svc
 
-run-name: ${{ github.event_name == 'schedule' && 'Scheduled Build' || 'Manual Scheduled Build' }} by @${{ github.actor }}
+run-name: ${{ github.event_name == 'schedule' && 'Scheduled Helix Authentication Service Build' || 'Manual Helix Authentication Service Build' }} by @${{ github.actor }}
 
 on:
   workflow_dispatch:
@@ -13,32 +13,8 @@ permissions:
   packages: write
 
 jobs:
-  helix-p4d:
-    uses: ./.github/workflows/build-develop.yml
-    with:
-      source_ref: main
-      build_path: helix-p4d
-    secrets: inherit
-
-  helix-proxy:
-    needs: [helix-p4d]
-    uses: ./.github/workflows/build-develop.yml
-    with:
-      source_ref: main
-      build_path: helix-proxy
-    secrets: inherit
-
-  helix-swarm:
-    needs: [helix-p4d, helix-proxy]
-    uses: ./.github/workflows/build-develop.yml
-    with:
-      source_ref: main
-      build_path: helix-swarm
-    secrets: inherit
-
-  # helix-auth-svc is built from the upstream git tag, so record the latest tag first
-  update-auth-svc-version:
-    needs: [helix-p4d, helix-proxy, helix-swarm]
+  # helix-auth-svc is built from the upstream git tag, so record the latest tag first.
+  update-version:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -60,8 +36,8 @@ jobs:
           git commit -m "chore(helix-auth-svc): update HAS_VERSION to latest tag"
           git push origin HEAD:main
 
-  helix-auth-svc:
-    needs: [helix-p4d, helix-proxy, helix-swarm, update-auth-svc-version]
+  build:
+    needs: update-version
     uses: ./.github/workflows/build-develop.yml
     with:
       source_ref: main

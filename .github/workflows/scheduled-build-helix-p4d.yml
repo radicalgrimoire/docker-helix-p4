@@ -1,0 +1,21 @@
+name: scheduled-build-helix-p4d
+
+run-name: ${{ github.event_name == 'schedule' && 'Scheduled Helix Core Build' || 'Manual Helix Core Build' }} by @${{ github.actor }}
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Daily at 01:00 JST = 16:00 UTC on the previous day
+    - cron: '0 16 * * *'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-develop.yml
+    with:
+      source_ref: main
+      build_path: helix-p4d
+    secrets: inherit

@@ -11,17 +11,15 @@
 The build, version detection, image deletion, publish, and scan workflow definitions are maintained
 in [radicalgrimoire/radicalgrimoire](https://github.com/radicalgrimoire/radicalgrimoire/tree/main/.github/workflows).
 [build-develop.yml](.github/workflows/build-develop.yml) and
-[build-test.yml](.github/workflows/build-test.yml) call them at `@main`;
-[scheduled-build.yml](.github/workflows/scheduled-build.yml) remains the scheduled
-entry point.
+[build-test.yml](.github/workflows/build-test.yml) call them at `@main`.
 
 Scheduled builds run daily at 01:00 JST (16:00 UTC on the previous day) for
 Helix Core, Helix Proxy, Helix Swarm, and Helix Authentication Service. The
-`scheduled-build` workflow can also be started manually from GitHub Actions.
-Manual runs build the same services from `main` and may commit an updated
-Helix Authentication Service version to `main`, but do not publish the
-`nightly` tag. Images use the upstream version as their tag, without a workflow
-run number. After version detection and
+individual `scheduled-build-helix-*` workflows can also be started manually
+from GitHub Actions, so each service can be rerun and investigated separately.
+Manual runs build from `main` and may commit an updated Helix Authentication
+Service version to `main`, but do not publish the `nightly` tag. Images use the
+upstream version as their tag, without a workflow run number. After version detection and
 the required scan succeeds (or is skipped for services without a scan),
 `publish.yml` pushes the version tag and `latest`; scheduled runs also push
 `nightly`. Once publishing succeeds, `delete-image.yml` removes untagged GHCR
