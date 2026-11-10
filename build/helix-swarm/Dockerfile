@@ -23,6 +23,14 @@ RUN set -eux; \
     echo "Installed Helix Swarm: $(dpkg-query -W -f='${Version}' helix-swarm)"; \
     echo "Installed Apache PHP: $php_version"; \
     php --version; \
+    sed -e 's#APACHE_LOG_DIR#/var/log/apache2#g' \
+        -e 's/REPLACE_WITH_SERVER_NAME/localhost/g' \
+        /opt/perforce/etc/perforce-swarm-site.conf \
+        > /etc/apache2/sites-available/perforce-swarm-site.conf; \
+    a2enmod rewrite php8.3 proxy proxy_http proxy_wstunnel headers expires; \
+    a2dissite 000-default; \
+    a2ensite perforce-swarm-site; \
+    apache2ctl configtest; \
     chmod 0755 /usr/local/bin/run-swarm.sh; \
     rm -rf /var/lib/apt/lists/*
 

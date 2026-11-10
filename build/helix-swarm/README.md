@@ -8,6 +8,12 @@ The package installation uses the Perforce APT repository and installs:
 
 - `helix-swarm`
 
+The build enables the Swarm Apache site from the Perforce package's virtual
+host template, disables Ubuntu's default site, and enables the Apache modules
+needed by Swarm. Apache listens on port 80 inside the container; `localhost` is
+the default virtual host name, so requests with other host names also reach
+Swarm when no other site is configured.
+
 The image build upgrades Ubuntu packages before installing Swarm and passes a
 fresh cache-busting value to every build. This prevents a cached package layer
 from retaining an older PHP or Swarm package when the build is scheduled. Noble
@@ -39,9 +45,11 @@ bash build/helix-swarm/docker-build.sh Dockerfile ./build/helix-swarm
 bash build/helix-swarm/docker-test.sh ./build/helix-swarm
 ```
 
-The test verifies that Swarm is installed and that the Apache PHP package
-contains Ubuntu's PHP2Shell fix. It deliberately does not start Swarm because
-a valid Swarm configuration and a Helix Core endpoint are required.
+The test verifies that Swarm is installed, that the Apache PHP package contains
+Ubuntu's PHP2Shell fix, and that Apache serves the Swarm document root rather
+than Ubuntu's default site. It starts a disposable container with a dummy
+configuration for the HTTP check; it does not verify Swarm application
+functionality or connect to Helix Core.
 
 ## Image version
 
