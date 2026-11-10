@@ -5,6 +5,7 @@ LABEL org.opencontainers.image.maintainer="ueno.s <ueno.s@gamestudio.co.jp>"
 ARG SWARM_CACHE_BUST
 
 COPY files/run.sh /usr/local/bin/run-swarm.sh
+COPY files/init-config.php /usr/local/lib/swarm/init-config.php
 
 RUN set -eux; \
     echo "Refreshing Swarm packages: ${SWARM_CACHE_BUST}"; \

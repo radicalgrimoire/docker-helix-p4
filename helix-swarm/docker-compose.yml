@@ -5,6 +5,11 @@ services:
     image: ${SWARM_IMAGE:-ghcr.io/radicalgrimoire/docker-helix-p4/helix-swarm:2026.4}
     init: true
     restart: unless-stopped
+    environment:
+      P4D_PORT: ${P4D_PORT:-}
+      SWARM_USER: ${SWARM_USER:-}
+      SWARM_PASSWD: ${SWARM_PASSWD:-}
+      SWARM_HOST: ${SWARM_HOST:-localhost}
     ports:
       - "${SWARM_HTTP_PORT:-80}:80"
       - "${SWARM_HTTPS_PORT:-443}:443"

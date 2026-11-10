@@ -3,17 +3,47 @@
 This Compose configuration runs the `2026.4` P4 Code Review image built from
 [`build/helix-swarm`](../build/helix-swarm/README.md).
 
-The image refuses to start without an initialized
-`/opt/perforce/swarm/data/config.php`. This protects a new or empty volume from
-being confused with a completed Swarm installation.
+When the data volume has no `config.php`, the image initializes it using
+`P4D_PORT`, `SWARM_USER`, and `SWARM_PASSWD`. `SWARM_HOST` is optional and
+defaults to `localhost`. All three required values must be nonempty; startup
+fails if any is missing. Initialization creates a worker token and sets data
+directory permissions, but does not connect to Helix Core, create a user,
+modify protections, install extensions, or validate the credentials.
+
+An existing `config.php` is never overwritten, even if environment variables
+change. To change an existing configuration, update it using the documented
+Swarm configuration procedures and clear the relevant Swarm config cache.
+
+For a new installation, supply values using the environment or a local
+`helix-swarm/.env` file:
+
+```dotenv
+P4D_PORT=ssl:perforce.example.com:1666
+SWARM_USER=swarm
+SWARM_PASSWD='<password-or-login-ticket>'
+SWARM_HOST=swarm.example.com
+```
+
+Replace the placeholders before starting. The `.env` file is Git-ignored but
+still contains a credential: restrict its permissions and do not share it.
+Use single quotes around `SWARM_PASSWD` so Compose does not interpolate `$`;
+escape a literal single quote as `\'`.
+Environment variables are also visible through Docker container inspection.
+The generated `config.php` contains the credential and must be protected and
+backed up securely. The built-in Swarm code automatically accepts an unknown
+Helix Core SSL fingerprint on first connection. Verify and establish server
+trust independently before allowing it to connect; environment-based
+initialization does not verify the server certificate.
 
 ## Production deployment
 
-Use the published, fixed image version:
+After an image containing the initialization changes has been built and
+published, use the fixed image version:
 
 ```bash
-docker compose -f helix-swarm/docker-compose.yml pull
-docker compose -f helix-swarm/docker-compose.yml up -d
+cd helix-swarm
+docker compose pull
+docker compose up -d
 ```
 
 By default, the service uses these named volumes:

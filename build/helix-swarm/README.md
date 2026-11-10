@@ -58,7 +58,9 @@ than Ubuntu's default site. It starts a disposable container with a dummy
 configuration for the HTTP check; it does not verify Swarm application
 functionality or connect to Helix Core.
 It also verifies that Redis listens on the expected port and retains a test key
-after container recreation using a temporary named volume.
+after container recreation using a temporary named volume. Initialization tests
+check required variables, configuration permissions, special characters in
+credentials, and preservation of an existing configuration.
 
 ## Image version
 
