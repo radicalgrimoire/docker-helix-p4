@@ -28,29 +28,53 @@ docker run --rm --entrypoint /bin/sh "$IMAGE_NAME" -ec '
 '
 
 container_id=""
+redis_volume=""
 cleanup() {
     if [ -n "$container_id" ]; then
         docker rm -f "$container_id" >/dev/null
     fi
+    if [ -n "$redis_volume" ]; then
+        docker volume rm "$redis_volume" >/dev/null
+    fi
 }
 trap cleanup EXIT
 
-container_id=$(docker run -d --entrypoint /bin/bash "$IMAGE_NAME" -ec '
-    mkdir -p /opt/perforce/swarm/data
-    printf "%s\n" "<?php return [];" > /opt/perforce/swarm/data/config.php
-    printf "%s\n" "swarm-document-root" > /opt/perforce/swarm/public/image-test.txt
-    exec /usr/local/bin/run-swarm.sh
-')
+redis_volume=$(docker volume create)
+start_container() {
+    container_id=$(docker run -d --mount "type=volume,source=$redis_volume,target=/opt/perforce/swarm/redis" \
+        --entrypoint /bin/bash "$IMAGE_NAME" -ec '
+        mkdir -p /opt/perforce/swarm/data
+        printf "%s\n" "<?php return [];" > /opt/perforce/swarm/data/config.php
+        printf "%s\n" "swarm-document-root" > /opt/perforce/swarm/public/image-test.txt
+        exec /usr/local/bin/run-swarm.sh
+    ')
+}
 
-for attempt in $(seq 1 30); do
-    if docker exec "$container_id" curl -fsS http://127.0.0.1/image-test.txt 2>/dev/null \
-        | grep -Fxq 'swarm-document-root'; then
-        echo "Apache serves the Swarm document root."
-        exit 0
-    fi
-    sleep 1
-done
+wait_for_services() {
+    for attempt in $(seq 1 30); do
+        if docker exec "$container_id" curl -fsS http://127.0.0.1/image-test.txt 2>/dev/null \
+            | grep -Fxq 'swarm-document-root' \
+            && docker exec "$container_id" /opt/perforce/swarm/sbin/redis-cli-swarm \
+                -h 127.0.0.1 -p 7379 ping 2>/dev/null | grep -Fxq 'PONG'; then
+            return 0
+        fi
+        sleep 1
+    done
+    echo "Apache or the Swarm Redis service did not start." >&2
+    docker logs "$container_id" >&2
+    return 1
+}
 
-echo "Apache did not serve the Swarm document root." >&2
-docker logs "$container_id" >&2
-exit 1
+start_container
+wait_for_services
+echo "Apache serves the Swarm document root and Redis listens on port 7379."
+docker exec "$container_id" /opt/perforce/swarm/sbin/redis-cli-swarm \
+    -h 127.0.0.1 -p 7379 set image-test-key image-test-value | grep -Fxq 'OK'
+sleep 2
+docker rm -f "$container_id" >/dev/null
+container_id=""
+start_container
+wait_for_services
+docker exec "$container_id" /opt/perforce/swarm/sbin/redis-cli-swarm \
+    -h 127.0.0.1 -p 7379 get image-test-key | grep -Fxq 'image-test-value'
+echo "Redis data survives container recreation."

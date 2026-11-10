@@ -8,7 +8,7 @@ if [ ! -r /opt/perforce/swarm/data/config.php ]; then
 fi
 
 rm -f /var/run/apache2/apache2.pid /run/apache2/apache2.pid
-/opt/perforce/swarm/sbin/redis-server-swarm --daemonize yes
+/opt/perforce/swarm/sbin/redis-server-swarm /opt/perforce/etc/redis-server.conf --daemonize yes --supervised no
 /etc/init.d/cron start
 
 exec apache2ctl -D FOREGROUND

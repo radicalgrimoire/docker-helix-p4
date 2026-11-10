@@ -11,9 +11,12 @@ services:
     volumes:
       - swarm-data:/opt/perforce/swarm/data
       - swarm-file:/opt/perforce/etc/file
+      - swarm-redis:/opt/perforce/swarm/redis
 
 volumes:
   swarm-data:
     name: swarm_server_swarm-data
   swarm-file:
     name: swarm_server_file
+  swarm-redis:
+    name: swarm_server_redis

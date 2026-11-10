@@ -22,10 +22,14 @@ By default, the service uses these named volumes:
 | --- | --- |
 | `swarm_server_swarm-data` | `/opt/perforce/swarm/data` |
 | `swarm_server_file` | `/opt/perforce/etc/file` |
+| `swarm_server_redis` | `/opt/perforce/swarm/redis` |
 
-These are the volume names created by the existing `SIN-Docker/swarm_server`
-Compose project. The default configuration therefore attaches the existing data
-when it is run on the same Docker host.
+The first two are the volume names created by the existing
+`SIN-Docker/swarm_server` Compose project. The Redis volume is new and does not
+automatically import data from an external Redis instance. The image enables
+Redis append-only persistence; recent writes can still be lost on an unexpected
+shutdown. Check that the existing Swarm configuration uses `localhost:7379`
+before switching to the bundled Redis.
 
 Set `SWARM_HTTP_PORT` or `SWARM_HTTPS_PORT` when the host ports 80 or 443 are
 already occupied. Port 80 should be closed or redirected to HTTPS according to

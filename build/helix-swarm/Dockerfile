@@ -31,6 +31,8 @@ RUN set -eux; \
     a2dissite 000-default; \
     a2ensite perforce-swarm-site; \
     apache2ctl configtest; \
+    mkdir -p /opt/perforce/swarm/redis; \
+    printf '\nappendonly yes\nappendfsync everysec\n' >> /opt/perforce/etc/redis-server.conf; \
     chmod 0755 /usr/local/bin/run-swarm.sh; \
     rm -rf /var/lib/apt/lists/*
 

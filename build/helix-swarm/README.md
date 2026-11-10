@@ -14,6 +14,13 @@ needed by Swarm. Apache listens on port 80 inside the container; `localhost` is
 the default virtual host name, so requests with other host names also reach
 Swarm when no other site is configured.
 
+The image starts Redis with the Perforce-supplied configuration, listening on
+`127.0.0.1:7379`, and enables append-only persistence with `appendfsync everysec`.
+Mount a persistent volume at `/opt/perforce/swarm/redis`; without it, Redis data
+is lost when the container is removed. An unexpected shutdown can still lose
+recent writes. Existing Swarm configurations must use this Redis endpoint;
+data from a previous external Redis is not migrated automatically.
+
 The image build upgrades Ubuntu packages before installing Swarm and passes a
 fresh cache-busting value to every build. This prevents a cached package layer
 from retaining an older PHP or Swarm package when the build is scheduled. Noble
@@ -50,6 +57,8 @@ Ubuntu's PHP2Shell fix, and that Apache serves the Swarm document root rather
 than Ubuntu's default site. It starts a disposable container with a dummy
 configuration for the HTTP check; it does not verify Swarm application
 functionality or connect to Helix Core.
+It also verifies that Redis listens on the expected port and retains a test key
+after container recreation using a temporary named volume.
 
 ## Image version
 
