@@ -9,6 +9,10 @@ defaults to `localhost`. All three required values must be nonempty; startup
 fails if any is missing. Initialization creates a worker token and sets data
 directory permissions, but does not connect to Helix Core, create a user,
 modify protections, install extensions, or validate the credentials.
+Set `SWARM_SSO` to `enabled`, `optional`, or `disabled` to configure the
+Swarm login mode on first initialization; it defaults to `disabled` and invalid
+values cause startup to fail. SSO also requires a configured P4 Authentication
+Service and Helix Core integration.
 
 An existing `config.php` is never overwritten, even if environment variables
 change. To change an existing configuration, update it using the documented
@@ -22,6 +26,7 @@ P4D_PORT=ssl:perforce.example.com:1666
 SWARM_USER=swarm
 SWARM_PASSWD='<password-or-login-ticket>'
 SWARM_HOST=swarm.example.com
+SWARM_SSO=disabled
 ```
 
 Replace the placeholders before starting. The `.env` file is Git-ignored but

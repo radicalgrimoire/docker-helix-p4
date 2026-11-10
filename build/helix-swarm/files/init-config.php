@@ -19,12 +19,22 @@ if ($hostname === false || $hostname === '') {
     $hostname = 'localhost';
 }
 
+$sso = getenv('SWARM_SSO');
+if ($sso === false || $sso === '') {
+    $sso = 'disabled';
+}
+if (!in_array($sso, ['disabled', 'optional', 'enabled'], true)) {
+    fwrite(STDERR, "Cannot initialize Swarm: SWARM_SSO must be disabled, optional, or enabled.\n");
+    exit(1);
+}
+
 $config = [
     'environment' => ['hostname' => $hostname],
     'p4' => [
         'port' => $values['P4D_PORT'],
         'user' => $values['SWARM_USER'],
         'password' => $values['SWARM_PASSWD'],
+        'sso' => $sso,
     ],
 ];
 

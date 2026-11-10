@@ -61,6 +61,7 @@ It also verifies that Redis listens on the expected port and retains a test key
 after container recreation using a temporary named volume. Initialization tests
 check required variables, configuration permissions, special characters in
 credentials, and preservation of an existing configuration.
+They also check the default and supported SSO modes and reject invalid values.
 
 ## Image version
 

@@ -62,6 +62,32 @@ expect_missing P4D_PORT
 expect_missing SWARM_USER -e P4D_PORT=p4.example:1666
 expect_missing SWARM_PASSWD -e P4D_PORT=p4.example:1666 -e SWARM_USER=swarm
 
+for sso in disabled optional enabled; do
+    docker run --rm --entrypoint /bin/bash \
+        -e P4D_PORT=p4.example:1666 -e SWARM_USER=swarm -e SWARM_PASSWD=test \
+        -e "SWARM_SSO=$sso" "$IMAGE_NAME" -ec '
+            php /usr/local/lib/swarm/init-config.php
+            php -r '"'"'$config = require "/opt/perforce/swarm/data/config.php"; exit($config["p4"]["sso"] === getenv("SWARM_SSO") ? 0 : 1);'"'"'
+        '
+done
+docker run --rm --entrypoint /bin/bash \
+    -e P4D_PORT=p4.example:1666 -e SWARM_USER=swarm -e SWARM_PASSWD=test \
+    "$IMAGE_NAME" -ec '
+        php /usr/local/lib/swarm/init-config.php
+        php -r '"'"'$config = require "/opt/perforce/swarm/data/config.php"; exit($config["p4"]["sso"] === "disabled" ? 0 : 1);'"'"'
+    '
+if invalid_output=$(docker run --rm \
+    -e P4D_PORT=p4.example:1666 -e SWARM_USER=swarm -e SWARM_PASSWD=test \
+    -e SWARM_SSO=invalid "$IMAGE_NAME" 2>&1); then
+    echo "Swarm unexpectedly accepted an invalid SWARM_SSO value." >&2
+    exit 1
+fi
+if ! printf '%s\n' "$invalid_output" | grep -Fq 'SWARM_SSO must be disabled, optional, or enabled'; then
+    printf '%s\n' "$invalid_output" >&2
+    echo "Swarm did not report the invalid SWARM_SSO value." >&2
+    exit 1
+fi
+
 redis_volume=$(docker volume create)
 data_volume=$(docker volume create)
 expected_password="test'\\password\$special"
@@ -70,6 +96,7 @@ start_container() {
         --mount "type=volume,source=$redis_volume,target=/opt/perforce/swarm/redis" \
         --mount "type=volume,source=$data_volume,target=/opt/perforce/swarm/data" \
         -e "P4D_PORT=$1" -e "SWARM_USER=$2" -e "SWARM_PASSWD=$3" -e "SWARM_HOST=$4" \
+        -e "SWARM_SSO=$5" \
         --entrypoint /bin/bash "$IMAGE_NAME" -ec '
         printf "%s\n" "swarm-document-root" > /opt/perforce/swarm/public/image-test.txt
         exec /usr/local/bin/run-swarm.sh
@@ -97,6 +124,7 @@ verify_initial_config() {
         if ($config["p4"]["port"] !== "p4.example:1666" ||
             $config["p4"]["user"] !== "first-swarm" ||
             $config["p4"]["password"] !== getenv("EXPECTED_PASSWORD") ||
+            $config["p4"]["sso"] !== "enabled" ||
             $config["environment"]["hostname"] !== "swarm.example") {
             exit(1);
         }
@@ -112,7 +140,7 @@ verify_initial_config() {
     '
 }
 
-start_container 'p4.example:1666' 'first-swarm' "$expected_password" 'swarm.example'
+start_container 'p4.example:1666' 'first-swarm' "$expected_password" 'swarm.example' 'enabled'
 wait_for_services
 echo "Apache serves the Swarm document root and Redis listens on port 7379."
 verify_initial_config
@@ -125,7 +153,7 @@ docker exec "$container_id" /opt/perforce/swarm/sbin/redis-cli-swarm \
 sleep 2
 docker rm -f "$container_id" >/dev/null
 container_id=""
-start_container 'other.example:1666' 'other-swarm' 'other-password' 'other.example'
+start_container 'other.example:1666' 'other-swarm' 'other-password' 'other.example' 'disabled'
 wait_for_services
 verify_initial_config
 docker exec "$container_id" /opt/perforce/swarm/sbin/redis-cli-swarm \
@@ -135,7 +163,7 @@ echo "Initial configuration is preserved on container recreation."
 
 docker rm -f "$container_id" >/dev/null
 container_id=""
-start_container '' '' '' ''
+start_container '' '' '' '' ''
 wait_for_services
 verify_initial_config
 echo "Existing configuration starts without initialization variables."
